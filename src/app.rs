@@ -30,12 +30,7 @@ impl App {
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
         if let Some(storage) = cc.storage {
-            println!("found storage");
-            let storage_dir = eframe::storage_dir("manga library");
-            println!("{:?}", storage_dir);
-            let app = eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-            println!("{:?}", app);
-            return app;
+            return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
         }
 
         println!("no storage found");
