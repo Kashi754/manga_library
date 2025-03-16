@@ -144,7 +144,7 @@ jobs:
         echo "OPENSSL_STATIC=1" >> $GITHUB_ENV
         echo "OPENSSL_DIR=/usr/lib/pkgconfig" >> $GITHUB_ENV
         echo $(pkg-config --variable pc_path pkg-config)${PKG_CONFIG_PATH:+:}${PKG_CONFIG_PATH}
-        ls "$PKG_CONFIG"
+        ls "$PKG_CONFIG_PATH"
 
     - name: Install cross for mac and windows
       if: ${{ !contains(matrix.TARGET, 'linux') }}
