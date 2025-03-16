@@ -1,13 +1,17 @@
-use crate::App;
+use std::borrow::Cow;
+
 use egui::Ui;
 use egui_extras::{Column, TableBuilder};
 
-#[derive(serde::Serialize, serde::Deserialize, Default, Debug)]
+use crate::app::api::Manga;
+
+#[derive(serde::Serialize, serde::Deserialize, Default, Debug, Clone)]
 pub struct InventoryManga {
-    title: String,
-    num_volumes: u8,
-    num_read: u8,
-    is_favorite: bool,
+    pub id: String,
+    pub num_read: u8,
+    pub is_favorite: bool,
+    #[serde(skip)]
+    pub manga_data: Option<Manga>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -20,28 +24,28 @@ impl Default for MangaTable {
     fn default() -> Self {
         let manga_vec = vec![
             InventoryManga {
-                title: "2.5 Dimensional Seduction".to_string(),
-                num_volumes: 5,
+                id: "66".to_string(),
                 num_read: 1,
                 is_favorite: false,
+                manga_data: None,
             },
             InventoryManga {
-                title: "Ai Yori Aoshi".to_string(),
-                num_volumes: 17,
+                id: "78".to_string(),
                 num_read: 17,
                 is_favorite: true,
+                manga_data: None,
             },
             InventoryManga {
-                title: "After God".to_string(),
-                num_volumes: 1,
+                id: "88".to_string(),
                 num_read: 0,
                 is_favorite: false,
+                manga_data: None,
             },
             InventoryManga {
-                title: "Fly Me to the Moon".to_string(),
-                num_volumes: 19,
+                id: "99".to_string(),
                 num_read: 17,
                 is_favorite: true,
+                manga_data: None,
             },
         ];
 
@@ -54,17 +58,13 @@ impl Default for MangaTable {
 
 impl MangaTable {
     pub fn show_inventory(&mut self, ui: &mut Ui) {
-        let text_height = egui::TextStyle::Body
-            .resolve(ui.style())
-            .size
-            .max(ui.spacing().interact_size.y);
-
         let available_height = ui.available_height();
 
         TableBuilder::new(ui)
             .striped(true)
             .resizable(true)
-            .cell_layout(egui::Layout::left_to_right(egui::Align::LEFT))
+            .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+            .column(Column::auto().at_least(30.0).clip(false).resizable(true))
             .column(
                 Column::remainder()
                     .at_least(40.0)
@@ -76,7 +76,10 @@ impl MangaTable {
             .column(Column::auto())
             .min_scrolled_height(0.0)
             .max_scroll_height(available_height)
-            .header(25.0, |mut header| {
+            .header(30.0, |mut header| {
+                header.col(|ui| {
+                    ui.strong("");
+                });
                 header.col(|ui| {
                     egui::Sides::new().show(
                         ui,
@@ -101,7 +104,7 @@ impl MangaTable {
                 });
             })
             .body(|body| {
-                body.rows(text_height, self.manga_list.len(), |mut row| {
+                body.rows(100.0, self.manga_list.len(), |mut row| {
                     let row_index = if self.reversed {
                         self.manga_list.len() - 1 - row.index()
                     } else {
@@ -116,17 +119,51 @@ impl MangaTable {
                         )
                     });
 
+                    let manga_data = if let Some(manga) = &manga.manga_data {
+                        manga
+                    } else {
+                        return;
+                    };
+
                     row.col(|ui| {
-                        ui.label(&*manga.title);
+                        let image_src = Cow::from(&*manga_data.attributes.poster_image.original);
+
+                        let image = egui::Image::new(egui::ImageSource::Uri(image_src))
+                            .max_height(100.0)
+                            .maintain_aspect_ratio(true)
+                            .corner_radius(5);
+
+                        ui.label("");
+                        ui.add(image);
                     });
                     row.col(|ui| {
-                        ui.label(manga.num_volumes.to_string());
+                        ui.label(&*manga_data.attributes.canonical_title);
                     });
                     row.col(|ui| {
-                        let value = if manga.num_read == manga.num_volumes {
-                            "Read"
+                        ui.columns(3, |cols| {
+                            cols[0].centered_and_justified(|ui| ui.label(""));
+                            cols[1].centered_and_justified(|ui| {
+                                if let Some(num_volumes) = manga_data.attributes.volume_count {
+                                    ui.label(num_volumes.to_string());
+                                } else {
+                                    ui.label("unk");
+                                }
+                            });
+                            cols[0].centered_and_justified(|ui| ui.label(""));
+                        });
+                    });
+                    row.col(|ui| {
+                        let value = if let Some(num_volumes) = manga_data.attributes.volume_count {
+                            let num_read = manga.num_read;
+                            if num_read == num_volumes {
+                                "Read".to_string()
+                            } else if let Some(unread) = num_volumes.checked_sub(num_read) {
+                                format!("{} Unread", unread)
+                            } else {
+                                "Read".to_string()
+                            }
                         } else {
-                            &format!("{} Unread", manga.num_volumes - manga.num_read)
+                            "unk".to_string()
                         };
 
                         ui.label(value);

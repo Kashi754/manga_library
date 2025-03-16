@@ -3,7 +3,26 @@
 
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
-fn main() -> eframe::Result {
+#[tokio::main]
+async fn main() -> eframe::Result {
+    use std::time::Duration;
+    use tokio::runtime::Runtime;
+
+    let rt = Runtime::new().expect("Unable to create Runtime");
+
+    // Enter the runtime so that \tokio::spawn\ is available immediately.
+    let _enter = rt.enter();
+
+    // Execute the runtime in its own thread.
+    // The future doesn't have to do anything.  In this example, it just sleeps forever.
+    std::thread::spawn(move || {
+        rt.block_on(async {
+            loop {
+                tokio::time::sleep(Duration::from_secs(3600)).await;
+            }
+        });
+    });
+
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
 
     let native_options = eframe::NativeOptions {
@@ -17,18 +36,21 @@ fn main() -> eframe::Result {
             ),
         ..Default::default()
     };
+
     eframe::run_native(
         "manga library",
         native_options,
-        Box::new(|cc| Ok(Box::new(manga_library::App::new(cc)))),
+        Box::new(|cc| {
+            egui_extras::install_image_loaders(&cc.egui_ctx);
+            Ok(Box::new(manga_library::App::new(cc)))
+        }),
     )
 }
 
 // When compiling to web using trunk:
 #[cfg(target_arch = "wasm32")]
 fn main() {
-    use eframe::wasm_bindgen::JsCast as _;
-
+    use eframe::wasm_bindgen::JsCast;
     // Redirect `log` message to `console.log` and friends:
     eframe::WebLogger::init(log::LevelFilter::Debug).ok();
 
@@ -50,7 +72,10 @@ fn main() {
             .start(
                 canvas,
                 web_options,
-                Box::new(|cc| Ok(Box::new(manga_library::App::new(cc)))),
+                Box::new(|cc| {
+                    egui_extras::install_image_loaders(&cc.egui_ctx);
+                    Ok(Box::new(manga_library::App::new(cc)))
+                }),
             )
             .await;
 
