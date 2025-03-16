@@ -1,2 +1,2 @@
 mod inventory;
-pub use inventory::*;
+pub use inventory::MangaTable;
