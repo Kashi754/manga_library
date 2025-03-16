@@ -48,7 +48,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - run: sudo apt-get install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libssl-dev
+      - run: sudo apt-get install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev pkg-config libssl-dev
       - uses: actions-rs/cargo@v1
         with:
           command: test
@@ -141,7 +141,9 @@ jobs:
       run: |
         cargo install cross --git https://github.com/cross-rs/cross --rev 1b8cf50d20180c1a394099e608141480f934b7f7
         sudo apt update
-        sudo apt install openssl libssl-dev pkg-config -y
+        echo "OPENSSL_STATIC=1" >> $GITHUB_ENV
+        echo "OPENSSL_DIR=/usr" >> $GITHUB_ENV
+        echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig" >> $GITHUB_ENV
 
     - name: Install cross for mac and windows
       if: ${{ !contains(matrix.TARGET, 'linux') }}
