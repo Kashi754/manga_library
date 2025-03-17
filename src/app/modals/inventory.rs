@@ -3,7 +3,10 @@ use std::borrow::Cow;
 use egui::Ui;
 use egui_extras::{Column, TableBuilder};
 
-use crate::app::api::{load_texture_from_url, Manga};
+use crate::app::api::Manga;
+
+#[cfg(target_arch = "wasm32")]
+use crate::app::api::load_texture_from_url;
 
 #[derive(serde::Serialize, serde::Deserialize, Default, Debug, Clone)]
 pub struct InventoryManga {
