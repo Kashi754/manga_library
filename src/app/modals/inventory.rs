@@ -1,12 +1,8 @@
 use std::borrow::Cow;
-
 use egui::Ui;
 use egui_extras::{Column, TableBuilder};
 
 use crate::app::api::Manga;
-
-#[cfg(target_arch = "wasm32")]
-use crate::app::api::load_texture_from_url;
 
 #[derive(serde::Serialize, serde::Deserialize, Default, Debug, Clone)]
 pub struct InventoryManga {
@@ -60,7 +56,7 @@ impl Default for MangaTable {
 }
 
 impl MangaTable {
-    pub fn show_inventory(&mut self, ui: &mut Ui, ctx: &egui::Context) {
+    pub fn show_inventory(&mut self, ui: &mut Ui) {
         let available_height = ui.available_height();
 
         TableBuilder::new(ui)
@@ -80,6 +76,7 @@ impl MangaTable {
             .min_scrolled_height(0.0)
             .max_scroll_height(available_height)
             .header(30.0, |mut header| {
+                #[cfg(not(target_arch = "wasm32"))]
                 header.col(|ui| {
                     ui.strong("");
                 });
@@ -128,26 +125,17 @@ impl MangaTable {
                         return;
                     };
 
+                    #[cfg(not(target_arch = "wasm32"))]
                     row.col(|ui| {
                         let image_src = Cow::from(&*manga_data.attributes.poster_image.original);
+                        
+                        let image = egui::Image::new(egui::ImageSource::Uri(image_src))
+                            .max_height(100.0)
+                            .maintain_aspect_ratio(true)
+                            .corner_radius(5);
 
-                        #[cfg(not(target_arch = "wasm32"))]
-                        {
-                            let image = egui::Image::new(egui::ImageSource::Uri(image_src))
-                                .max_height(100.0)
-                                .maintain_aspect_ratio(true)
-                                .corner_radius(5);
-
-                            ui.label("");
-                            ui.add(image);
-                        }
-
-                        #[cfg(target_arch = "wasm32")]
-                        {
-                            if let Some(texture) = load_texture_from_url(ctx, &image_src) {
-                                ui.image(&texture);
-                            }
-                        }
+                        ui.label("");
+                        ui.add(image);
                     });
                     row.col(|ui| {
                         ui.label(&*manga_data.attributes.canonical_title);

@@ -81,23 +81,3 @@ impl Manga {
         response
     }
 }
-
-
-#[cfg(target_arch = "wasm32")]
-use reqwest::blocking::Client;
-#[cfg(target_arch = "wasm32")]
-use image::load_from_memory;
-#[cfg(target_arch = "wasm32")]
-use eframe::epaint::ColorImage;
-
-#[cfg(target_arch = "wasm32")]
-pub fn load_texture_from_url(ctx: &egui::Context, url: &str) -> Option<egui::TextureHandle> {
-    let bytes = Client::new().get(url).send().ok()?.bytes().ok()?;
-    let img = load_from_memory(&bytes).ok()?.to_rgba8();
-    let size = [img.width() as _, img.height() as _];
-    let pixels = img.into_raw();
-    let color_image = ColorImage::from_rgba_unmultiplied(size, &pixels);
-
-    Some(ctx.load_texture("image", color_image, egui::TextureOptions::default()))
-}
-

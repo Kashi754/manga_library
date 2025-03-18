@@ -95,7 +95,7 @@ impl App {
                     let manga_table_clone = manga_table.clone();
 
                     spawn_local(async move {
-                        let mut manga = manga_clone.lock().unwrap().clone();
+                        let mut manga = manga_clone.lock().unwrap();
 
                         match Manga::fetch(&manga.id.clone()).await {
                             ResponseType::Ok(data) => {
@@ -167,7 +167,7 @@ impl eframe::App for App {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
-            self.manga_table.lock().unwrap().show_inventory(ui, &ctx);
+            self.manga_table.lock().unwrap().show_inventory(ui);
 
             // Footer
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
